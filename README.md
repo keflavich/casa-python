@@ -38,9 +38,13 @@ To install Astropy into CASA, you can download the latest stable release
 from the [Astropy homepage](http://www.astropy.org/) then expand it 
 and install it with e.g.:
 
-    tar xvzf astropy-0.2.tar.gz
-    cd astropy-0.2
+    tar xvzf astropy-0.3.tar.gz
+    cd astropy-0.3
     casa-python setup.py install
+
+or 
+
+    casa-pip install astropy
 
 Once the installation has completed, you can start up CASA as usual, and 
 Astropy should be available:
@@ -80,4 +84,5 @@ Credits
 -------
 
 The wrapper was prepared by Thomas Robitaille (@astrofrog) based on code from
-CASA.
+CASA.  ``casa-pip`` was written by Adam Ginsburg (@keflavich) based on Tom's
+code.
