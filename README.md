@@ -18,6 +18,8 @@ are available on the [python package index](pypi.python.org), for example:
 
     casa-pip install astropy
 
+Note that casa-python and casa-pip are only for Mac OS.
+
 Installation
 ------------
 
