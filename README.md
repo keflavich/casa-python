@@ -13,12 +13,23 @@ instead use:
 
     casa-python setup.py install
 
+Alternatively, if you install casa-pip, you can pip install packages that
+are available on the [python package index](pypi.python.org), for example:
+
+    casa-pip install astropy
+
 Installation
 ------------
 
 To install, download the latest version of the ``casa-python`` script
 from [here](https://raw.github.com/astrofrog/casa_python/master/casa-python)
 and place it in any directory that is in your ``$PATH``.
+
+To install ``casa-pip``, you need to first run 
+
+    ./install-pip.sh
+
+then add the ``casa-pip`` script to your ``$PATH``.
 
 Example
 -------
