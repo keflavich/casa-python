@@ -173,8 +173,8 @@ exec -a pythonw $INSTALLPATH/MacOS/pythonw -W ignore::DeprecationWarning "$@"
 
     mkdir_p(BIN_DIR)
 
-    casapy_path = os.path.dirname(os.path.dirname(get_casapy_path()),
-                                  casapy_path=casapy_path)
+    if casapy_path is None:
+        casapy_path = os.path.dirname(os.path.dirname(get_casapy_path()))
 
     f = open(os.path.join(BIN_DIR, 'casa-python'), 'w')
     f.write(TEMPLATE_PYTHON.format(casapy_path=casapy_path, pv=pv, user_site=USER_SITE.format(pv=pv)))
