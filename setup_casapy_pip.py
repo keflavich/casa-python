@@ -6,6 +6,12 @@ import stat
 import tempfile
 import subprocess
 import platform
+import sys
+import optparse
+
+if sys.version_info[0] == 2 and sys.version_info[1] < 6:
+    raise Exception("Cannot run this script with python versions lower than 2.6."
+                    "  Try to find a more recent python installation.")
 
 from distutils.spawn import find_executable
 from hashlib import md5
@@ -20,7 +26,6 @@ PIP_MD5 = "834b2904f92d46aaa333267fb1c922bb"
 
 SETUPTOOLS_URL = "https://pypi.python.org/packages/source/s/setuptools/setuptools-3.4.3.tar.gz"
 SETUPTOOLS_MD5 = "284bf84819c0f6735c853619d1a54955"
-
 
 def mkdir_p(path):
     # Create a directory using mkdir -p
@@ -47,8 +52,9 @@ def get_casapy_path():
     return casapy_path
 
 
-def get_python_version_mac():
-    casapy_path = get_casapy_path()
+def get_python_version_mac(casapy_path=None):
+    if casapy_path is None:
+        casapy_path = get_casapy_path()
     parent = os.path.dirname(casapy_path)
     python = os.path.join(parent, 'python')
     p = subprocess.Popen([python, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -57,9 +63,10 @@ def get_python_version_mac():
     print("Determined Python version in CASA... {0}".format(version))
     return version
 
-def get_python_path_linux():
+def get_python_path_linux(casapy_path=None):
     """ get the version and the appropriate parent directory path """
-    casapy_path = get_casapy_path()
+    if casapy_path is None:
+        casapy_path = get_casapy_path()
     parent = os.path.dirname(casapy_path)
     grandparent = os.path.dirname(parent)
     if os.path.exists(os.path.join(grandparent, 'lib64', 'python2.6')):
@@ -78,8 +85,8 @@ def get_python_path_linux():
         raise ValueError("Could not determine Python version")
     return version,path
 
-def get_python_version_linux():
-    version,casapy_parent_path = get_python_path_linux()
+def get_python_version_linux(casapy_path=None):
+    version,casapy_parent_path = get_python_path_linux(casapy_path=casapy_path)
     print("Determined Python version in CASA... {0}".format(version))
     return version
 
@@ -100,8 +107,9 @@ def install_package(pv="2.7",packagename='pip',url=PIP_URL,md5_checksum=PIP_MD5)
     if md5(content).hexdigest() != md5_checksum:
         raise ValueError("checksum does not match")
 
-    with open(os.path.basename(url), 'wb') as f:
-        f.write(content)
+    f = open(os.path.basename(url), 'wb')
+    f.write(content)
+    f.close()
 
     # Prepare installation script
 
@@ -122,8 +130,9 @@ casa-python setup.py install --prefix=$HOME/.casa
     pkg_filename = os.path.basename(url)
     pkg_name = pkg_filename.rsplit('.', 2)[0]
 
-    with open('install_pkg.sh', 'w') as f:
-        f.write(PKG_INSTALL.format(pkg_filename=pkg_filename, pkg_name=pkg_name))
+    f = open('install_pkg.sh', 'w')
+    f.write(PKG_INSTALL.format(pkg_filename=pkg_filename, pkg_name=pkg_name))
+    f.close()
 
     make_executable('install_pkg.sh')
 
@@ -133,7 +142,7 @@ casa-python setup.py install --prefix=$HOME/.casa
         raise SystemError("{0} installation failed!".format(packagename))
 
 
-def write_casa_python_mac(pv="2.7"):
+def write_casa_python_mac(pv="2.7", casapy_path=None):
 
     print("Creating casa-python script...")
 
@@ -164,15 +173,17 @@ exec -a pythonw $INSTALLPATH/MacOS/pythonw -W ignore::DeprecationWarning "$@"
 
     mkdir_p(BIN_DIR)
 
-    casapy_path = os.path.dirname(os.path.dirname(get_casapy_path()))
+    casapy_path = os.path.dirname(os.path.dirname(get_casapy_path()),
+                                  casapy_path=casapy_path)
 
-    with open(os.path.join(BIN_DIR, 'casa-python'), 'w') as f:
-        f.write(TEMPLATE_PYTHON.format(casapy_path=casapy_path, pv=pv, user_site=USER_SITE.format(pv=pv)))
+    f = open(os.path.join(BIN_DIR, 'casa-python'), 'w')
+    f.write(TEMPLATE_PYTHON.format(casapy_path=casapy_path, pv=pv, user_site=USER_SITE.format(pv=pv)))
+    f.close()
 
     make_executable(os.path.join(BIN_DIR, 'casa-python'))
 
 
-def write_casa_python_linux(pv="2.7"):
+def write_casa_python_linux(pv="2.7", casapy_path=None):
 
     print("Creating casa-python script...")
 
@@ -198,10 +209,11 @@ exec $INSTALLPATH/lib64/casapy/bin/python $*
     mkdir_p(BIN_DIR)
 
     # vers is throwaway here
-    vers,casapy_path = get_python_path_linux()
+    vers,casapy_path = get_python_path_linux(casapy_path=casapy_path)
 
-    with open(os.path.join(BIN_DIR, 'casa-python'), 'w') as f:
-        f.write(TEMPLATE_PYTHON.format(casapy_path=casapy_path, pv=pv))
+    f = open(os.path.join(BIN_DIR, 'casa-python'), 'w')
+    f.write(TEMPLATE_PYTHON.format(casapy_path=casapy_path, pv=pv))
+    f.close()
 
     make_executable(os.path.join(BIN_DIR, 'casa-python'))
 
@@ -214,8 +226,9 @@ def write_casa_pip():
 $HOME/.casa/bin/casa-python $HOME/.casa/bin/pip $* --user
     """
 
-    with open(os.path.join(BIN_DIR, 'casa-pip'), 'w') as f:
-        f.write(TEMPLATE_PIP)
+    f = open(os.path.join(BIN_DIR, 'casa-pip'), 'w')
+    f.write(TEMPLATE_PIP)
+    f.close()
 
     make_executable(os.path.join(BIN_DIR, 'casa-pip'))
 
@@ -229,8 +242,9 @@ import site
 site.addsitedir("{site_packages}")
     """
 
-    with open(os.path.join(USER_DIR, 'init.py'), 'a') as f:
-        f.write(TEMPLATE_INIT.format(site_packages=USER_SITE.format(pv=pv)))
+    f = open(os.path.join(USER_DIR, 'init.py'), 'a')
+    f.write(TEMPLATE_INIT.format(site_packages=USER_SITE.format(pv=pv)))
+    f.close()
 
 
 def add_bin_to_path():
@@ -240,15 +254,20 @@ def add_bin_to_path():
 
 if __name__ == "__main__":
 
+    parser = optparse.OptionParser()
+    parser.add_option('-p','--casapy_path',dest='casapy_path',
+                      help='Full path to the casapy executable', default=None)
+    options, args = parser.parse_args()
+
     if platform.system() == 'Darwin':
 
-        python_version = get_python_version_mac()
-        write_casa_python_mac(pv=python_version)
+        python_version = get_python_version_mac(casapy_path=options.casapy_path)
+        write_casa_python_mac(pv=python_version, casapy_path=options.casapy_path)
 
     else:
 
-        python_version = get_python_version_linux()
-        write_casa_python_linux(pv=python_version)
+        python_version = get_python_version_linux(casapy_path=options.casapy_path)
+        write_casa_python_linux(pv=python_version, casapy_path=options.casapy_path)
 
 
     install_package(pv=python_version, packagename='setuptools',
